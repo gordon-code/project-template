@@ -1,0 +1,6 @@
+hack/
+result
+.direnv/
+__pycache__/
+.pytest_cache/
+.serena/

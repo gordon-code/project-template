@@ -1,0 +1,6 @@
+_is_template: true
+project_name: project-template
+project_description: Swiss-army project template managed by Copier
+hosting_platform: github
+hosting_org: gordon-code
+repo_url: https://github.com/gordon-code/project-template.git

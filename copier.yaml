@@ -1,0 +1,84 @@
+# config https://copier.readthedocs.io/en/latest/configuring/#available-settings
+_min_copier_version: "9.13.1"
+_answers_file: ".copier-answers.yaml"
+_subdirectory: template
+_envops: { trim_blocks: true, lstrip_blocks: true }
+_jinja_extensions:
+  - jinja2_git_dir.GitDirectoryExtension
+_exclude:
+  # copier defaults (defining _exclude replaces built-in defaults)
+  - copier.yaml
+  - copier.yml
+  - "~*"
+  - "*.py[co]"
+  - __pycache__
+  - .git
+  - .DS_Store
+  - .svn
+  # conditional
+  - "{% if hosting_platform != 'github' %}.github/**{% endif %}"
+
+# questions https://copier.readthedocs.io/en/latest/configuring/#questions
+repo_url:
+  type: str
+  help: "Canonical repository URL (optional)?"
+  default: ""
+
+project_name:
+  type: str
+  help: "Project name (kebab-case)?"
+  default: >-
+    {{ (repo_url | regex_replace('/$', '') | regex_search('[/:]([^/]+?)(\\.git)?$', '\\1') or [])
+      | first | default(_folder_name, true) }}
+  validator: >-
+    {% if not (project_name | regex_search('^[a-z][a-z0-9\-]+$')) %}
+    Must be kebab-case: lowercase letters, digits, and dashes (e.g. my-cool-project).
+    {% endif %}
+
+project_description:
+  type: str
+  help: "Project description (optional)?"
+  default: ""
+
+hosting_platform:
+  type: str
+  help: "Where will this project be hosted?"
+  choices:
+    GitHub: github
+    GitLab: gitlab
+    Other: other
+  default: >-
+    {% if 'github.com' in repo_url %}github
+    {%- elif 'gitlab.com' in repo_url %}gitlab
+    {%- elif repo_url %}other
+    {%- else %}github{% endif %}
+
+# Note: GitLab nested group URLs (gitlab.com/group/subgroup/project) will extract
+# the subgroup, not the top-level group. Override manually when prompted.
+hosting_org:
+  type: str
+  help: "Hosting org or username?"
+  default: >-
+    {{ (repo_url | regex_replace('/$', '') | regex_search('[/:]([^/]+)/[^/]+?(\\.git)?$', '\\1') or [])
+      | first }}
+  validator: >-
+    {% if not (hosting_org | regex_search('^[a-zA-Z0-9._-]+$')) %}
+    Org/username must contain only letters, digits, hyphens, dots, or underscores.
+    {% endif %}
+  when: "{{ hosting_platform in ['github', 'gitlab'] }}"
+
+_is_template:
+  type: bool
+  default: false
+  when: false
+
+date_format:
+  type: str
+  default: "%Y-%m-%d"
+  when: false
+
+created_on:
+  type: str
+  help: (hidden) Project creation date
+  default: "{{ created_on | default(date_format | strftime) }}"
+  when: false

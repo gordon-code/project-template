@@ -15,6 +15,7 @@
       "original": {
         "owner": "gordon-code",
         "repo": "copier-flake",
+        "rev": "c7a313453cb6255654c8a0eb081555280fd8fda6",
         "type": "github"
       }
     },

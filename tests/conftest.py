@@ -155,6 +155,29 @@ def generate_with_nix_mutable(tmp_path, template_src, default_answers):
     return _generate
 
 
+@pytest.fixture(scope="session", params=PLATFORMS)
+def generated_project(tmp_path_factory, template_src, request):
+    """Session-scoped: default generated project per platform. READ-ONLY tests only.
+
+    Eliminates N+1 copier invocations — tests sharing default answers reuse this.
+    """
+    platform = request.param
+    base_tmp = tmp_path_factory.mktemp(f"gen-{platform}")
+
+    answers = {
+        "project_name": "test-project",
+        "hosting_platform": platform,
+        "hosting_org": "test-org",
+        "project_description": "A test project",
+        "repo_url": "",
+    }
+
+    out = base_tmp / "test-project"
+    out.mkdir(parents=True, exist_ok=True)
+    _run_copier(template_src, out, answers)
+    return out
+
+
 # --- Helpers ---
 
 

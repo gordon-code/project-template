@@ -57,6 +57,32 @@ def test_repo_url_derivation(
     assert answers["hosting_org"] == expected_org
 
 
+def test_flake_exists(generate):
+    """flake.nix is rendered from template."""
+    project = generate()
+    assert (project / "flake.nix").exists()
+
+
+def test_base_nix_exists(generate):
+    """lib/nix/base.nix is rendered from template."""
+    project = generate()
+    assert (project / "lib" / "nix" / "base.nix").exists()
+
+
+def test_project_nix_exists(generate):
+    """lib/nix/project.nix stub is rendered from template."""
+    project = generate()
+    assert (project / "lib" / "nix" / "project.nix").exists()
+
+
+def test_envrc_exists(generate):
+    """.envrc is rendered from template."""
+    project = generate()
+    envrc = project / ".envrc"
+    assert envrc.exists()
+    assert "use flake" in envrc.read_text()
+
+
 def test_empty_url_uses_explicit(generate):
     """Empty repo_url falls back to explicitly provided values."""
     project = generate(

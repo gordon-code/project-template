@@ -3,6 +3,8 @@ _min_copier_version: "9.13.1"
 _answers_file: ".copier-answers.yaml"
 _subdirectory: template
 _envops: { trim_blocks: true, lstrip_blocks: true }
+_skip_if_exists:
+  - "lib/nix/project.nix"
 _jinja_extensions:
   - jinja2_git_dir.GitDirectoryExtension
 _exclude:

@@ -255,3 +255,48 @@ def test_security_md_absent(generate, hosting_platform):
     """Non-GitHub platforms don't have SECURITY.md."""
     project = generate(hosting_platform=hosting_platform)
     assert_files_absent(project, ".github/SECURITY.md")
+
+
+# --- Phase 5: Documentation & Answers ---
+
+
+def test_license_exists(generate):
+    """LICENSE exists with year and hosting_org."""
+    project = generate()
+    license_file = project / "LICENSE"
+    assert license_file.exists()
+    content = license_file.read_text()
+    assert "test-org" in content
+    assert "MIT License" in content
+
+
+def test_contributing_exists(generate):
+    """CONTRIBUTING.md exists with Conventional Commits reference."""
+    project = generate()
+    contributing = project / "CONTRIBUTING.md"
+    assert contributing.exists()
+    assert "Conventional Commits" in contributing.read_text()
+
+
+@pytest.mark.parametrize("hosting_platform", PLATFORMS)
+def test_readme_sections(generate, hosting_platform):
+    """README has Getting Started and Development sections."""
+    project = generate(hosting_platform=hosting_platform)
+    content = (project / "README.md").read_text()
+    assert "Getting Started" in content
+    assert "Development" in content
+
+
+def test_copier_answers_valid_yaml(generate):
+    """.copier-answers.yaml is valid YAML with expected keys."""
+    project = generate()
+    answers = parse_yaml(project / ".copier-answers.yaml")
+    assert "project_name" in answers
+    assert "hosting_platform" in answers
+
+
+def test_idea_files(generate):
+    """JetBrains .idea files are rendered."""
+    project = generate()
+    assert (project / ".idea" / "modules.xml").exists()
+    assert (project / ".idea" / "test-project.iml").exists()

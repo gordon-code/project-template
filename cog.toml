@@ -1,0 +1,37 @@
+# Managed by copier — changes may be overwritten by `copier update`
+#:schema https://docs.cocogitto.io/cog-schema.json
+# For a reference of possible values: https://docs.cocogitto.io/config/
+
+# A list of glob patterns describing branches on which semver bump are allowed
+branch_whitelist = ["main"]
+
+# A list of command to run AFTER creating a version.
+# `` will be interpreted as your target version
+# `` includes the version and the `tag_prefix`
+post_bump_hooks = [
+    # Re-tag release commit to ensure a signed tag
+"git tag {{version_tag}} {{version_tag}}^{} --force --sign --message='Release {{version}}'"]
+
+# Prefix tags with "v" to easily identify them as
+# "version" or release tags
+tag_prefix = "v"
+
+# An optional list of additional allowed commit type
+# `cog commit {commit_type}` commit command will be generated at runtime
+[commit_types]
+chore = { omit_from_changelog = true }
+test = { omit_from_changelog = true }
+
+[changelog]
+path = "CHANGELOG.md"
+template = "remote"
+remote = "github.com"
+owner = "gordon-code"
+repository = "project-template"
+
+# Map git signatures to remote usernames for changelog contributor links
+# Uncomment and edit to enable:
+authors = [
+    # { signature = "Your Name", username = "your-username" },
+
+]

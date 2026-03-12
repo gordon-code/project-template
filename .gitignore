@@ -1,6 +1,23 @@
-hack/
-result
+# Managed by copier — template baseline above, project-specific content below
+# Directories
 .direnv/
-__pycache__/
-.pytest_cache/
+.cache/
 .serena/
+result/
+
+# Directories with exceptions later
+.idea/*
+
+# Files
+.DS_Store
+.env
+__pycache__/
+*.pyc
+
+# Exceptions
+!.idea/modules.xml
+!.idea/project-template.iml
+
+# ~~~ Add project-specific content below this line ~~~
+hack/
+.pytest_cache/

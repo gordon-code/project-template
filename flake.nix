@@ -1,13 +1,16 @@
+# Managed by copier — changes may be overwritten by `copier update`
 {
+  description = "Swiss-army project template managed by Copier";
+
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+
     copier-flake.url = "github:gordon-code/copier-flake";
   };
 
   outputs =
-    {
+    inputs@{
       nixpkgs,
-      copier-flake,
       ...
     }:
     let
@@ -27,20 +30,38 @@
           }
         );
     in
+    let
+      cfgFor =
+        pkgs:
+        (nixpkgs.lib.evalModules {
+          specialArgs = {
+            inherit pkgs;
+            inherit (nixpkgs) lib;
+            flakeInputs = inputs;
+          };
+          modules =
+            let
+              dir = builtins.readDir ./lib/nix;
+              nixFiles = builtins.filter (n: builtins.match ".*\\.nix" n != null) (builtins.attrNames dir);
+            in
+            map (f: ./lib/nix + "/${f}") nixFiles;
+        }).config;
+    in
     {
       devShells = forEachSupportedSystem (
-        { pkgs, system, ... }:
+        { pkgs, ... }:
+        let
+          cfg = cfgFor pkgs;
+        in
         {
           default = pkgs.mkShell {
-            packages = [
-              (pkgs.python3.withPackages (ps: [
-                ps.pytest
-                ps.pyyaml
-              ]))
-              copier-flake.packages.${system}.copier
-            ];
+            packages = cfg.devPkgs;
+            inherit (cfg) shellHook env inputsFrom;
           };
         }
       );
-    };
+
+      formatter = forEachSupportedSystem ({ pkgs, ... }: (cfgFor pkgs).formatter);
+    }
+    // (cfgFor nixpkgs.legacyPackages.${builtins.head supportedSystems}).extraFlakeOutputs;
 }

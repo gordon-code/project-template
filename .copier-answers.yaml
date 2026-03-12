@@ -1,0 +1,10 @@
+# DO NOT EDIT: Changes here will be overwritten by Copier
+# Run `copier update` instead
+_commit: v0.1.0-1-gb0748bf
+_src_path: .
+created_on: '2026-03-12'
+hosting_org: gordon-code
+hosting_platform: github
+project_description: Swiss-army project template managed by Copier
+project_name: project-template
+repo_url: https://github.com/gordon-code/project-template.git

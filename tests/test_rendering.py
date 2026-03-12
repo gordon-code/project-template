@@ -300,3 +300,34 @@ def test_idea_files(generate):
     project = generate()
     assert (project / ".idea" / "modules.xml").exists()
     assert (project / ".idea" / "test-project.iml").exists()
+
+
+# --- Phase 7: Renovate Integration ---
+
+
+def test_renovate_no_template_config_default(generate):
+    """Default projects have no template-specific Renovate managers."""
+    project = generate(hosting_platform="github")
+    content = (project / ".github" / "renovate.json").read_text()
+    assert "template/" not in content
+
+
+def test_renovate_has_template_config(generate):
+    """Template repo (_is_template=True) has template-specific managers."""
+    project = generate(hosting_platform="github", _is_template=True)
+    content = (project / ".github" / "renovate.json").read_text()
+    assert "template/" in content
+
+
+def test_no_consistency_job_default(generate):
+    """Default projects have no consistency job in pr-checks."""
+    project = generate(hosting_platform="github")
+    content = (project / ".github" / "workflows" / "pr-checks.yaml").read_text()
+    assert "consistency" not in content
+
+
+def test_has_consistency_job_template(generate):
+    """Template repo (_is_template=True) has consistency job."""
+    project = generate(hosting_platform="github", _is_template=True)
+    content = (project / ".github" / "workflows" / "pr-checks.yaml").read_text()
+    assert "consistency" in content

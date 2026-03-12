@@ -1,0 +1,31 @@
+# Managed by copier — changes may be overwritten by `copier update`
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [{{ "." | gitdefaultbranch }}]
+
+concurrency:
+{% raw %}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+{% endraw %}
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: ./.github/actions/nix-setup
+      - name: Lint
+        run: nix develop -c just lint
+      - name: Test
+        run: nix develop -c just test
+      - name: Integration Test
+        run: nix develop -c just test-integration
+
+{% include pathjoin("includes", "ci-consistency-job.jinja") ignore missing %}

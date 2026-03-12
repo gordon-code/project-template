@@ -2,7 +2,15 @@
 
 import pytest
 
-from conftest import PLATFORMS, check_file_contents, parse_toml, parse_yaml
+from conftest import (
+    PLATFORMS,
+    assert_files_absent,
+    assert_files_present,
+    check_file_contents,
+    parse_json,
+    parse_toml,
+    parse_yaml,
+)
 
 
 @pytest.mark.parametrize("hosting_platform", PLATFORMS)
@@ -165,3 +173,85 @@ def test_gitignore_exists(generate):
     content = (project / ".gitignore").read_text()
     assert ".direnv/" in content
     assert "result/" in content
+
+
+# --- Phase 4: GitHub Integration ---
+
+
+def test_nix_setup_action(generate):
+    """GitHub projects have nix-setup composite action."""
+    project = generate(hosting_platform="github")
+    action = project / ".github" / "actions" / "nix-setup" / "action.yaml"
+    assert action.exists()
+    content = action.read_text()
+    assert "composite" in content
+
+
+def test_nix_setup_pinned(generate):
+    """Actions in nix-setup are SHA-pinned."""
+    project = generate(hosting_platform="github")
+    content = (project / ".github" / "actions" / "nix-setup" / "action.yaml").read_text()
+    assert "@" in content
+    assert "nix-installer-action@" in content
+
+
+@pytest.mark.parametrize("hosting_platform", ["gitlab", "other"])
+def test_github_files_absent(generate, hosting_platform):
+    """Non-GitHub platforms have no .github/ files."""
+    project = generate(hosting_platform=hosting_platform)
+    github_dir = project / ".github"
+    if github_dir.exists():
+        assert not any(github_dir.rglob("*")), "Unexpected files in .github/"
+
+
+def test_no_template_artifacts(generate):
+    """Generated projects don't contain template artifacts."""
+    project = generate()
+    assert_files_absent(project, "copier.yaml", "template", "includes", "hack", "tests", "pytest.ini")
+
+
+def test_pr_checks_valid_yaml(generate):
+    """pr-checks.yaml is valid YAML for GitHub."""
+    project = generate(hosting_platform="github")
+    data = parse_yaml(project / ".github" / "workflows" / "pr-checks.yaml")
+    assert "jobs" in data
+    assert "checks" in data["jobs"]
+
+
+def test_pr_checks_has_steps(generate):
+    """pr-checks has lint, test, and integration test steps."""
+    project = generate(hosting_platform="github")
+    content = (project / ".github" / "workflows" / "pr-checks.yaml").read_text()
+    assert "just lint" in content
+    assert "just test" in content
+    assert "just test-integration" in content
+
+
+def test_renovate_config_valid_json(generate):
+    """renovate.json is valid JSON for GitHub."""
+    project = generate(hosting_platform="github")
+    data = parse_json(project / ".github" / "renovate.json")
+    assert "extends" in data
+    assert "customManagers" in data
+
+
+def test_renovate_no_template_config(generate):
+    """Default projects don't have template-specific Renovate config."""
+    project = generate(hosting_platform="github")
+    content = (project / ".github" / "renovate.json").read_text()
+    assert "postUpgradeTasks" not in content
+
+
+def test_security_md(generate):
+    """GitHub projects have SECURITY.md with project name."""
+    project = generate(hosting_platform="github")
+    security = project / ".github" / "SECURITY.md"
+    assert security.exists()
+    check_file_contents(security, expected=("test-project",))
+
+
+@pytest.mark.parametrize("hosting_platform", ["gitlab", "other"])
+def test_security_md_absent(generate, hosting_platform):
+    """Non-GitHub platforms don't have SECURITY.md."""
+    project = generate(hosting_platform=hosting_platform)
+    assert_files_absent(project, ".github/SECURITY.md")

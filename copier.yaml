@@ -64,7 +64,9 @@ hosting_org:
     {{ (repo_url | regex_replace('/$', '') | regex_search('[/:]([^/]+)/[^/]+?(\\.git)?$', '\\1') or [])
       | first }}
   validator: >-
-    {% if not (hosting_org | regex_search('^[a-zA-Z0-9._-]+$')) %}
+    {% if hosting_platform == 'github' and not (hosting_org | regex_search('^[a-zA-Z0-9][a-zA-Z0-9-]*$')) %}
+    GitHub org/username: letters, digits, and hyphens only (no dots or underscores).
+    {% elif not (hosting_org | regex_search('^[a-zA-Z0-9._-]+$')) %}
     Org/username must contain only letters, digits, hyphens, dots, or underscores.
     {% endif %}
   when: "{{ hosting_platform in ['github', 'gitlab'] }}"

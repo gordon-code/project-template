@@ -12,17 +12,19 @@ cd my-project
 nix run nixpkgs#just -- install
 ```
 
-### With direnv
+### Development
 
 ```shell
 direnv allow
+# or: nix develop -c $SHELL
 ```
 
-## Development
+## Recipes
 
 | Recipe | Description |
 |--------|-------------|
 | `just install` | Install dependencies and git hooks |
+| `just update` | Pull in template updates |
 | `just lint` | Run all linters |
 | `just test` | Run tests |
 | `just fmt` | Format code |

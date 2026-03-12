@@ -58,7 +58,7 @@ cog bump --major
 
 To pull in template updates:
 
-    copier update --trust
+    just update
 
 ## Dependency Updates
 

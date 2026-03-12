@@ -1,0 +1,42 @@
+# Managed by copier — changes may be overwritten by `copier update`
+#:schema https://docs.cocogitto.io/cog-schema.json
+# For a reference of possible values: https://docs.cocogitto.io/config/
+
+# A list of glob patterns describing branches on which semver bump are allowed
+branch_whitelist = ["{{ "." | gitdefaultbranch }}"]
+
+# A list of command to run AFTER creating a version.
+# `{{version}}` will be interpreted as your target version
+# `{{version_tag}}` includes the version and the `tag_prefix`
+post_bump_hooks = [
+    # Re-tag release commit to ensure a signed tag
+    {% raw %}"git tag {{version_tag}} {{version_tag}}^{} --force --sign --message='Release {{version}}'"{% endraw %}
+]
+
+# Prefix tags with "v" to easily identify them as
+# "version" or release tags
+tag_prefix = "v"
+
+# An optional list of additional allowed commit type
+# `cog commit {commit_type}` commit command will be generated at runtime
+[commit_types]
+chore = { omit_from_changelog = true }
+test = { omit_from_changelog = true }
+
+[changelog]
+path = "CHANGELOG.md"
+{% if hosting_platform in ['github', 'gitlab'] %}
+template = "remote"
+remote = "{% if hosting_platform == 'gitlab' %}gitlab.com{% else %}github.com{% endif %}"
+owner = "{{ hosting_org }}"
+repository = "{{ project_name }}"
+
+# Map git signatures to remote usernames for changelog contributor links
+# Uncomment and edit to enable:
+authors = [
+    # { signature = "Your Name", username = "your-username" },
+
+]
+{%- else %}
+template = "default"
+{% endif %}

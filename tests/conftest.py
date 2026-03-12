@@ -26,6 +26,52 @@ GIT_ENV = {
 TEMPLATE_ROOT = Path(__file__).parent.parent
 
 
+def _get_env():
+    """Build environment with git isolation vars."""
+    env = os.environ.copy()
+    env.update(GIT_ENV)
+    return env
+
+
+def _prepare_template_source(dest):
+    """Copy template repo to dest and git-init it (copier needs a git repo source)."""
+    shutil.copytree(
+        TEMPLATE_ROOT,
+        dest,
+        ignore=shutil.ignore_patterns(
+            ".git", "hack", "__pycache__", ".direnv", ".serena", ".pytest_cache"
+        ),
+    )
+    env = _get_env()
+    subprocess.run(["git", "init", "-b", "main"], cwd=dest, env=env, check=True, capture_output=True)
+    subprocess.run(["git", "add", "."], cwd=dest, env=env, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "init"], cwd=dest, env=env, check=True, capture_output=True)
+    return dest
+
+
+def _run_copier(src, out, answers):
+    """Run copier copy with the given answers."""
+    env = _get_env()
+    cmd = ["copier", "copy", "--trust", "--defaults"]
+    for key, value in answers.items():
+        cmd.extend(["-d", f"{key}={value}"])
+    cmd.extend([str(src), str(out)])
+    result = subprocess.run(cmd, env=env, capture_output=True, text=True)
+    if result.returncode != 0:
+        raise RuntimeError(
+            f"copier copy failed (exit {result.returncode}):\n"
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
+    return out
+
+
+@pytest.fixture(scope="session")
+def template_src(tmp_path_factory):
+    """Session-scoped: prepared template source (copy + git init). Shared by all tests."""
+    src = tmp_path_factory.mktemp("template") / "src"
+    return _prepare_template_source(src)
+
+
 @pytest.fixture
 def default_answers():
     """Default copier answers for test generation."""
@@ -39,99 +85,43 @@ def default_answers():
 
 
 @pytest.fixture
-def generate(tmp_path, default_answers):
+def generate(tmp_path, template_src, default_answers):
     """Generate a project from the template.
 
     Returns a callable that accepts **answers overrides and returns the output Path.
+    Uses session-scoped template_src to avoid re-copying the template on every test.
     """
 
     def _generate(**answers):
         merged = {**default_answers, **answers}
         project_name = merged.get("project_name", "test-project")
-
-        # Create a temp copy of the template repo (copier needs a git repo)
-        src = tmp_path / "template-copy"
-        shutil.copytree(
-            TEMPLATE_ROOT,
-            src,
-            ignore=shutil.ignore_patterns(
-                ".git", "hack", "__pycache__", ".direnv", ".serena", ".pytest_cache"
-            ),
-        )
-
-        # Git init the temp copy so copier sees it as a valid repo
-        env = {**os.environ, **GIT_ENV}
-        subprocess.run(
-            ["git", "init", "-b", "main"], cwd=src, env=env, check=True, capture_output=True
-        )
-        subprocess.run(
-            ["git", "add", "."], cwd=src, env=env, check=True, capture_output=True
-        )
-        subprocess.run(
-            ["git", "commit", "-m", "init"],
-            cwd=src,
-            env=env,
-            check=True,
-            capture_output=True,
-        )
-
-        # Output directory
         out = tmp_path / project_name
         out.mkdir(parents=True, exist_ok=True)
-
-        # Build copier CLI args
-        cmd = ["copier", "copy", "--trust", "--defaults"]
-        for key, value in merged.items():
-            cmd.extend(["-d", f"{key}={value}"])
-        cmd.extend([str(src), str(out)])
-
-        result = subprocess.run(cmd, env=env, capture_output=True, text=True)
-        if result.returncode != 0:
-            raise RuntimeError(
-                f"copier copy failed (exit {result.returncode}):\n"
-                f"stdout: {result.stdout}\nstderr: {result.stderr}"
-            )
-
-        return out
+        return _run_copier(template_src, out, merged)
 
     return _generate
 
 
 @pytest.fixture(scope="session", params=PLATFORMS)
-def generate_with_nix(tmp_path_factory, request):
+def generate_with_nix(tmp_path_factory, template_src, request):
     """Session-scoped: generate + nix flake update. READ-ONLY tests only."""
     platform = request.param
-    tmp = tmp_path_factory.mktemp(f"nix-{platform}")
+    base_tmp = tmp_path_factory.mktemp(f"nix-{platform}")
 
-    src = tmp / "template-copy"
-    shutil.copytree(
-        TEMPLATE_ROOT,
-        src,
-        ignore=shutil.ignore_patterns(
-            ".git", "hack", "__pycache__", ".direnv", ".serena", ".pytest_cache"
-        ),
-    )
+    answers = {
+        "project_name": "test-project",
+        "hosting_platform": platform,
+        "hosting_org": "test-org",
+        "project_description": "A test project",
+        "repo_url": "",
+    }
 
-    env = {**os.environ, **GIT_ENV}
-    subprocess.run(["git", "init", "-b", "main"], cwd=src, env=env, check=True, capture_output=True)
-    subprocess.run(["git", "add", "."], cwd=src, env=env, check=True, capture_output=True)
-    subprocess.run(["git", "commit", "-m", "init"], cwd=src, env=env, check=True, capture_output=True)
-
-    out = tmp / "test-project"
+    out = base_tmp / "test-project"
     out.mkdir(parents=True, exist_ok=True)
-
-    cmd = [
-        "copier", "copy", "--trust", "--defaults",
-        "-d", "project_name=test-project",
-        "-d", f"hosting_platform={platform}",
-        "-d", "hosting_org=test-org",
-        "-d", "project_description=A test project",
-        "-d", "repo_url=",
-        str(src), str(out),
-    ]
-    subprocess.run(cmd, env=env, check=True, capture_output=True, text=True)
+    _run_copier(template_src, out, answers)
 
     # Git init + nix flake update in the generated project
+    env = _get_env()
     subprocess.run(["git", "init", "-b", "main"], cwd=out, env=env, check=True, capture_output=True)
     subprocess.run(["git", "add", "."], cwd=out, env=env, check=True, capture_output=True)
     subprocess.run(["git", "commit", "-m", "init"], cwd=out, env=env, check=True, capture_output=True)
@@ -143,45 +133,23 @@ def generate_with_nix(tmp_path_factory, request):
 
 
 @pytest.fixture
-def generate_with_nix_mutable(tmp_path, default_answers):
+def generate_with_nix_mutable(tmp_path, template_src, default_answers):
     """Function-scoped: generate + nix flake update. For mutation tests."""
 
     def _generate(**answers):
         merged = {**default_answers, **answers}
         project_name = merged.get("project_name", "test-project")
-
-        src = tmp_path / "template-copy"
-        shutil.copytree(
-            TEMPLATE_ROOT,
-            src,
-            ignore=shutil.ignore_patterns(
-                ".git", "hack", "__pycache__", ".direnv", ".serena", ".pytest_cache"
-            ),
-        )
-
-        env = {**os.environ, **GIT_ENV}
-        subprocess.run(["git", "init", "-b", "main"], cwd=src, env=env, check=True, capture_output=True)
-        subprocess.run(["git", "add", "."], cwd=src, env=env, check=True, capture_output=True)
-        subprocess.run(["git", "commit", "-m", "init"], cwd=src, env=env, check=True, capture_output=True)
-
         out = tmp_path / project_name
         out.mkdir(parents=True, exist_ok=True)
+        _run_copier(template_src, out, merged)
 
-        cmd = ["copier", "copy", "--trust", "--defaults"]
-        for key, value in merged.items():
-            cmd.extend(["-d", f"{key}={value}"])
-        cmd.extend([str(src), str(out)])
-
-        subprocess.run(cmd, env=env, check=True, capture_output=True, text=True)
-
-        # Git init + nix flake update
+        env = _get_env()
         subprocess.run(["git", "init", "-b", "main"], cwd=out, env=env, check=True, capture_output=True)
         subprocess.run(["git", "add", "."], cwd=out, env=env, check=True, capture_output=True)
         subprocess.run(["git", "commit", "-m", "init"], cwd=out, env=env, check=True, capture_output=True)
         subprocess.run(["nix", "flake", "update"], cwd=out, check=True, capture_output=True, timeout=300)
         subprocess.run(["git", "add", "flake.lock"], cwd=out, env=env, check=True, capture_output=True)
         subprocess.run(["git", "commit", "-m", "lock"], cwd=out, env=env, check=True, capture_output=True)
-
         return out
 
     return _generate
@@ -192,11 +160,10 @@ def generate_with_nix_mutable(tmp_path, default_answers):
 
 def run_in_project(project_path, cmd, **kwargs):
     """Run a subprocess in the project directory."""
-    env = {**os.environ, **GIT_ENV}
     return subprocess.run(
         cmd,
         cwd=project_path,
-        env=env,
+        env=_get_env(),
         capture_output=True,
         text=True,
         **kwargs,

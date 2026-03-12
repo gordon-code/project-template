@@ -1,0 +1,10 @@
+{% if _is_template %}
+
+### From template
+
+```shell
+copier copy --trust https://github.com/gordon-code/project-template.git my-project
+cd my-project
+nix run nixpkgs#just -- install
+```
+{% endif %}

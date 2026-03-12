@@ -1,4 +1,5 @@
 """Copier template test fixtures."""
+
 import json
 import os
 import shutil
@@ -25,6 +26,14 @@ GIT_ENV = {
 
 TEMPLATE_ROOT = Path(__file__).parent.parent
 
+DEFAULT_ANSWERS = {
+    "project_name": "test-project",
+    "hosting_platform": "github",
+    "hosting_org": "test-org",
+    "project_description": "A test project",
+    "repo_url": "",
+}
+
 
 def _get_env():
     """Build environment with git isolation vars."""
@@ -45,7 +54,7 @@ def _prepare_template_source(dest):
     env = _get_env()
     subprocess.run(["git", "init", "-b", "main"], cwd=dest, env=env, check=True, capture_output=True)
     subprocess.run(["git", "add", "."], cwd=dest, env=env, check=True, capture_output=True)
-    subprocess.run(["git", "commit", "-m", "init"], cwd=dest, env=env, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "chore: init"], cwd=dest, env=env, check=True, capture_output=True)
     return dest
 
 
@@ -65,6 +74,21 @@ def _run_copier(src, out, answers):
     return out
 
 
+def _init_generated_project(project_path):
+    """Initialize git and run nix flake update in a generated project."""
+    env = _get_env()
+    subprocess.run(["git", "init", "-b", "main"], cwd=project_path, env=env, check=True, capture_output=True)
+    subprocess.run(["git", "add", "."], cwd=project_path, env=env, check=True, capture_output=True)
+    subprocess.run(["git", "commit", "-m", "chore: init"], cwd=project_path, env=env, check=True, capture_output=True)
+    subprocess.run(["nix", "flake", "update"], cwd=project_path, check=True, capture_output=True, timeout=300)
+    subprocess.run(["git", "add", "flake.lock"], cwd=project_path, env=env, check=True, capture_output=True)
+    subprocess.run(
+        ["git", "commit", "-m", "chore: lock flake inputs"],
+        cwd=project_path, env=env, check=True, capture_output=True,
+    )
+    return project_path
+
+
 @pytest.fixture(scope="session")
 def template_src(tmp_path_factory):
     """Session-scoped: prepared template source (copy + git init). Shared by all tests."""
@@ -75,13 +99,7 @@ def template_src(tmp_path_factory):
 @pytest.fixture
 def default_answers():
     """Default copier answers for test generation."""
-    return {
-        "project_name": "test-project",
-        "hosting_platform": "github",
-        "hosting_org": "test-org",
-        "project_description": "A test project",
-        "repo_url": "",
-    }
+    return dict(DEFAULT_ANSWERS)
 
 
 @pytest.fixture
@@ -90,10 +108,11 @@ def generate(tmp_path, template_src, default_answers):
 
     Returns a callable that accepts **answers overrides and returns the output Path.
     Uses session-scoped template_src to avoid re-copying the template on every test.
+    Pass _skip_defaults=True to omit default answers (for derivation testing).
     """
 
-    def _generate(**answers):
-        merged = {**default_answers, **answers}
+    def _generate(_skip_defaults=False, **answers):
+        merged = answers if _skip_defaults else {**default_answers, **answers}
         project_name = merged.get("project_name", "test-project")
         out = tmp_path / project_name
         out.mkdir(parents=True, exist_ok=True)
@@ -102,54 +121,31 @@ def generate(tmp_path, template_src, default_answers):
     return _generate
 
 
-@pytest.fixture(scope="session", params=PLATFORMS)
-def generate_with_nix(tmp_path_factory, template_src, request):
-    """Session-scoped: generate + nix flake update. READ-ONLY tests only."""
-    platform = request.param
-    base_tmp = tmp_path_factory.mktemp(f"nix-{platform}")
+@pytest.fixture(scope="session")
+def generate_with_nix(tmp_path_factory, template_src):
+    """Session-scoped: generate + nix flake update. READ-ONLY tests only.
 
-    answers = {
-        "project_name": "test-project",
-        "hosting_platform": platform,
-        "hosting_org": "test-org",
-        "project_description": "A test project",
-        "repo_url": "",
-    }
-
+    Uses github platform only — nix tests are platform-agnostic.
+    """
+    base_tmp = tmp_path_factory.mktemp("nix-github")
     out = base_tmp / "test-project"
     out.mkdir(parents=True, exist_ok=True)
-    _run_copier(template_src, out, answers)
-
-    # Git init + nix flake update in the generated project
-    env = _get_env()
-    subprocess.run(["git", "init", "-b", "main"], cwd=out, env=env, check=True, capture_output=True)
-    subprocess.run(["git", "add", "."], cwd=out, env=env, check=True, capture_output=True)
-    subprocess.run(["git", "commit", "-m", "init"], cwd=out, env=env, check=True, capture_output=True)
-    subprocess.run(["nix", "flake", "update"], cwd=out, check=True, capture_output=True, timeout=300)
-    subprocess.run(["git", "add", "flake.lock"], cwd=out, env=env, check=True, capture_output=True)
-    subprocess.run(["git", "commit", "-m", "lock"], cwd=out, env=env, check=True, capture_output=True)
-
+    _run_copier(template_src, out, DEFAULT_ANSWERS)
+    _init_generated_project(out)
     return out
 
 
 @pytest.fixture
-def generate_with_nix_mutable(tmp_path, template_src, default_answers):
+def generate_with_nix_mutable(tmp_path, template_src):
     """Function-scoped: generate + nix flake update. For mutation tests."""
 
     def _generate(**answers):
-        merged = {**default_answers, **answers}
+        merged = {**DEFAULT_ANSWERS, **answers}
         project_name = merged.get("project_name", "test-project")
         out = tmp_path / project_name
         out.mkdir(parents=True, exist_ok=True)
         _run_copier(template_src, out, merged)
-
-        env = _get_env()
-        subprocess.run(["git", "init", "-b", "main"], cwd=out, env=env, check=True, capture_output=True)
-        subprocess.run(["git", "add", "."], cwd=out, env=env, check=True, capture_output=True)
-        subprocess.run(["git", "commit", "-m", "init"], cwd=out, env=env, check=True, capture_output=True)
-        subprocess.run(["nix", "flake", "update"], cwd=out, check=True, capture_output=True, timeout=300)
-        subprocess.run(["git", "add", "flake.lock"], cwd=out, env=env, check=True, capture_output=True)
-        subprocess.run(["git", "commit", "-m", "lock"], cwd=out, env=env, check=True, capture_output=True)
+        _init_generated_project(out)
         return out
 
     return _generate
@@ -163,15 +159,28 @@ def generated_project(tmp_path_factory, template_src, request):
     """
     platform = request.param
     base_tmp = tmp_path_factory.mktemp(f"gen-{platform}")
+    answers = {**DEFAULT_ANSWERS, "hosting_platform": platform}
+    out = base_tmp / "test-project"
+    out.mkdir(parents=True, exist_ok=True)
+    _run_copier(template_src, out, answers)
+    return out
 
-    answers = {
-        "project_name": "test-project",
-        "hosting_platform": platform,
-        "hosting_org": "test-org",
-        "project_description": "A test project",
-        "repo_url": "",
-    }
 
+@pytest.fixture(scope="session")
+def generated_github_project(tmp_path_factory, template_src):
+    """Session-scoped: default github project. Shared by github-only read tests."""
+    base_tmp = tmp_path_factory.mktemp("gen-github-default")
+    out = base_tmp / "test-project"
+    out.mkdir(parents=True, exist_ok=True)
+    _run_copier(template_src, out, DEFAULT_ANSWERS)
+    return out
+
+
+@pytest.fixture(scope="session")
+def generated_template_project(tmp_path_factory, template_src):
+    """Session-scoped: _is_template=True github project. For template-repo tests."""
+    base_tmp = tmp_path_factory.mktemp("gen-template")
+    answers = {**DEFAULT_ANSWERS, "_is_template": "True"}
     out = base_tmp / "test-project"
     out.mkdir(parents=True, exist_ok=True)
     _run_copier(template_src, out, answers)

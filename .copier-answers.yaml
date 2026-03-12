@@ -1,8 +1,8 @@
 # DO NOT EDIT: Changes here will be overwritten by Copier
 # Run `copier update` instead
-_commit: v0.1.0-9-g94592dd
+_commit: v0.1.0-12-gc255d97
 _src_path: .
-created_on: '2026-03-12'
+created_on: '2026-03-13'
 hosting_org: gordon-code
 hosting_platform: github
 project_description: Swiss-army project template managed by Copier

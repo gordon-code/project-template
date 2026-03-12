@@ -1,4 +1,5 @@
 {% if _is_template %}
+
   consistency:
     runs-on: ubuntu-latest
     steps:
@@ -12,6 +13,7 @@
         run: nix develop -c just render
       - name: Check for drift
         run: |
+          git checkout -- .copier-answers.yaml
           git diff
           test -z "$(git status --porcelain)"
 {% endif %}

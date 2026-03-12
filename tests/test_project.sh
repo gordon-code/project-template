@@ -9,7 +9,9 @@ TMPDIR="$(mktemp -d)"
 cleanup() { rm -rf "$TMPDIR"; }
 trap cleanup EXIT INT TERM
 
-# Git identity
+# Isolate from host git config (ensures parity with CI)
+export GIT_CONFIG_NOSYSTEM=1
+export HOME="$TMPDIR"
 export GIT_AUTHOR_NAME="Test User"
 export GIT_COMMITTER_NAME="Test User"
 export GIT_AUTHOR_EMAIL="test@example.com"
@@ -31,24 +33,29 @@ copier copy --trust --vcs-ref HEAD --defaults \
   "$TEMPLATE_DIR" "$TMPDIR/test-project"
 
 cd "$TMPDIR/test-project"
-git init -b main && git add . && nix flake update && git add flake.lock
+git init -b main
+git config user.name "Test User"
+git config user.email "test@example.com"
+git add . && nix flake update && git add flake.lock
 nix develop -c just install
 pass "Generate + Install"
 
 echo "=== Phase 2: File structure ==="
 
 for f in flake.nix flake.lock justfile prek.toml cog.toml \
-         lib/nix/base.nix lib/nix/project.nix lib/just/base.just \
-         .copier-answers.yaml .editorconfig .gitignore .envrc \
-         LICENSE README.md CONTRIBUTING.md; do
+  lib/nix/base.nix lib/nix/project.nix lib/just/base.just \
+  .copier-answers.yaml .editorconfig .gitignore .envrc \
+  LICENSE README.md CONTRIBUTING.md .schemas/cog-schema.json; do
   [ -f "$f" ] || fail "Missing: $f"
 done
 pass "Core files present"
 
 if [ "$HOSTING_PLATFORM" = "github" ]; then
-  for f in .github/workflows/pr-checks.yaml .github/workflows/renovate.yaml \
-           .github/renovate.json .github/actions/nix-setup/action.yaml \
-           .github/SECURITY.md; do
+  for f in .github/workflows/pr-checks.yaml \
+    .github/workflows/renovate.yaml \
+    .github/renovate.json \
+    .github/actions/nix-setup/action.yaml \
+    .github/SECURITY.md; do
     [ -f "$f" ] || fail "Missing GitHub file: $f"
   done
   pass "GitHub files present"

@@ -17,11 +17,11 @@ render:
 	  ! -name 'hack' ! -name 'tests' ! -name 'pytest.ini' \
 	  ! -name 'flake.lock' \
 	  -exec rm -rf {} +
-	# Regenerate from template
-	copier copy -r HEAD --trust --defaults \
+	# Regenerate from template (use --vcs-ref=HEAD to avoid submodule issues)
+	copier copy --vcs-ref=HEAD --trust --defaults \
 	  --data-file includes/copier-answers-sample.yml -f . .
 	# Restore project.nix (copier copy doesn't honor _skip_if_exists)
-	git checkout -- lib/nix/project.nix 2>/dev/null || true
+	git show HEAD:lib/nix/project.nix > lib/nix/project.nix 2>/dev/null || true
 
 # Run unit tests
 test:

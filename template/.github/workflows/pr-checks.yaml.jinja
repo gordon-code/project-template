@@ -27,5 +27,4 @@ jobs:
         run: nix develop -c just test
       - name: Integration Test
         run: nix develop -c just test-integration
-
 {% include pathjoin("includes", "ci-consistency-job.jinja") ignore missing %}

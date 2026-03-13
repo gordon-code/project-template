@@ -11,13 +11,18 @@ install:
 	[ -d .git ] || git init
 	git add .
 	if [ ! -f flake.lock ]; then
-	  nix flake update && git add flake.lock
+		nix flake update && git add flake.lock
 	fi
-	# prek and cog are devshell tools — use nix develop
+	# Commit template files before installing hooks (hooks block main-branch commits)
+	if ! git diff --cached --quiet 2>/dev/null; then
+		nix develop -c cog commit chore "initial commit, template applied" copier
+	fi
+	# Install hooks after the initial commit
 	nix develop -c prek install
-	git add .
-	nix develop -c cog commit chore "initial commit, template applied" --scope copier \
-	  || echo "Nothing to commit"
+
+# Update from upstream template
+update:
+	copier update --trust --answers-file .copier-answers.yaml
 
 # Run all linters
 lint:
@@ -37,7 +42,7 @@ clean:
 
 # Format code
 fmt:
-	nix fmt
+	nix fmt -- .
 
 # Install git hooks
 hooks-install:

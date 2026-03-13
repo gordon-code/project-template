@@ -1,7 +1,5 @@
 """Nix layer tests (require nix, session-scoped for performance)."""
 
-import pytest
-
 from conftest import check_file_contents, run_in_project
 
 
@@ -26,12 +24,24 @@ def test_flake_check(generate_with_nix):
     assert result.returncode == 0, f"nix flake check failed:\n{result.stderr}"
 
 
-def test_flake_show(generate_with_nix):
-    """nix flake show outputs devShells and formatter."""
-    result = run_in_project(generate_with_nix, ["nix", "flake", "show"], check=False)
-    assert result.returncode == 0, f"nix flake show failed:\n{result.stderr}"
-    assert "devShells" in result.stdout
-    assert "formatter" in result.stdout
+def test_flake_outputs(generate_with_nix):
+    """Flake exposes devShells and formatter outputs.
+
+    Uses nix eval instead of nix flake show — flake show evaluates ALL platforms
+    and crashes with SIGSEGV on cross-platform rustPlatform derivations (nix bug).
+    nix flake check (test_flake_check) validates current-system evaluation.
+    """
+    import json
+
+    for output in ("devShells", "formatter"):
+        result = run_in_project(
+            generate_with_nix,
+            ["nix", "eval", f".#{output}", "--apply", "builtins.attrNames", "--json"],
+            check=False,
+        )
+        assert result.returncode == 0, f"nix eval {output} failed:\n{result.stderr}"
+        systems = json.loads(result.stdout)
+        assert len(systems) >= 1, f"No systems in {output}"
 
 
 def test_nix_fmt_clean(generate_with_nix):
@@ -48,7 +58,7 @@ def test_justfile_valid(generate_with_nix):
         generate_with_nix, ["nix", "develop", "-c", "just", "--list"], check=False
     )
     assert result.returncode == 0, f"just --list failed:\n{result.stderr}"
-    for recipe in ("install", "lint", "test", "fmt", "clean", "hooks-install"):
+    for recipe in ("install", "lint", "test", "fmt", "clean", "hooks-install", "update"):
         assert recipe in result.stdout, f"Recipe '{recipe}' missing from just --list"
 
 
@@ -71,21 +81,21 @@ def test_just_install(generate_with_nix_mutable):
     assert (project / ".git" / "hooks" / "pre-commit").exists()
 
 
-@pytest.mark.xfail(reason="pr-checks.yaml trailing newline + base.just indent + no-commit-to-branch on main")
 def test_prek_lint_clean(generate_with_nix_mutable):
     """Generated project passes its own lint checks."""
     project = generate_with_nix_mutable()
-    # Install hooks first so prek config is set up
+    # Install hooks
     run_in_project(project, ["nix", "develop", "-c", "prek", "install"], check=False)
+    # Switch to feature branch so no-commit-to-branch hook passes
+    run_in_project(project, ["git", "checkout", "-b", "test/lint"])
     result = run_in_project(
         project, ["nix", "develop", "-c", "just", "lint"], check=False
     )
     assert result.returncode == 0, f"just lint failed:\n{result.stderr}\n{result.stdout}"
 
 
-@pytest.mark.xfail(reason="fixture commits use non-conventional messages ('init', 'lock')")
 def test_cog_verify(generate_with_nix_mutable):
-    """cog verify passes on the initial commit."""
+    """cog check passes on the initial commits."""
     project = generate_with_nix_mutable()
     result = run_in_project(
         project, ["nix", "develop", "-c", "cog", "check"], check=False

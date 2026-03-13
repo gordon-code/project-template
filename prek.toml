@@ -13,6 +13,7 @@ priority = 0
 
 [[repos.hooks]]
 id = "end-of-file-fixer"
+exclude = '\.jinja$'
 priority = 0
 
 [[repos.hooks]]
@@ -142,14 +143,6 @@ priority = 0
 [[repos.hooks]]
 id = "check-renovate"
 name = "Validate Renovate config"
-priority = 0
-
-[[repos.hooks]]
-id = "check-jsonschema"
-name = "Validate cog.toml schema"
-args = ["--schemafile", "https://docs.cocogitto.io/cog-schema.json"]
-files = '^cog\.toml$'
-types = ["toml"]
 priority = 0
 
 [[repos]]

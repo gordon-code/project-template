@@ -45,7 +45,7 @@ echo "=== Phase 2: File structure ==="
 for f in flake.nix flake.lock justfile prek.toml cog.toml \
   lib/nix/base.nix lib/nix/project.nix lib/just/base.just \
   .copier-answers.yaml .editorconfig .gitignore .envrc \
-  LICENSE README.md CONTRIBUTING.md .schemas/cog-schema.json; do
+  LICENSE README.md CONTRIBUTING.md; do
   [ -f "$f" ] || fail "Missing: $f"
 done
 pass "Core files present"

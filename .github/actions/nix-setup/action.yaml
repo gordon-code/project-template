@@ -11,10 +11,12 @@ inputs:
 runs:
   using: composite
   steps:
-    - uses: DeterminateSystems/nix-installer-action@21a544727d0c62386e78b4befe52d19ad12692e3 # v17
+    - uses: DeterminateSystems/nix-installer-action@c5a866b6ab867e88becbed4467b93592bce69f8a # v21
       with:
-        extra-conf: ${{ inputs.nix-extra-conf }}
+        extra-conf: |
+          eval-cores = 1
+          ${{ inputs.nix-extra-conf }}
         diagnostic-endpoint: ""
-    - uses: DeterminateSystems/magic-nix-cache-action@87b14cf437d03d37989d87f0fa5ce4f5dc1a330b # v8
+    - uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
       with:
         diagnostic-endpoint: ""

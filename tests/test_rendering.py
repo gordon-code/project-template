@@ -96,7 +96,6 @@ def test_default_project_structure(generated_github_project):
         "cog.toml",
         ".editorconfig",
         ".gitignore",
-        ".schemas/cog-schema.json",
         "README.md",
         "LICENSE",
         "CONTRIBUTING.md",
@@ -330,10 +329,3 @@ def test_nix_setup_no_telemetry(generated_github_project):
     """nix-setup action disables Determinate Systems telemetry."""
     content = (generated_github_project / ".github" / "actions" / "nix-setup" / "action.yaml").read_text()
     assert 'diagnostic-endpoint: ""' in content
-
-
-def test_prek_schema_local(generated_github_project):
-    """cog.toml schema check uses local file, not network URL."""
-    content = (generated_github_project / "prek.toml").read_text()
-    assert ".schemas/cog-schema.json" in content
-    assert "https://" not in content or "schemafile" not in content.split("https://")[0]

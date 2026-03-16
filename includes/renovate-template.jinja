@@ -5,14 +5,14 @@
       "description": "Update SHA-pinned actions in .jinja template files",
       "fileMatch": ["template/.*\\.ya?ml(\\.jinja)?$", "includes/.*\\.jinja$"],
       "matchStrings": ["uses:\\s+(?<depName>[\\w-]+/[\\w-]+)@(?<currentDigest>[a-f0-9]+)\\s+#\\s+(?<currentValue>v[\\S]+)"],
-      "datasource": "github-releases"
+      "datasourceTemplate": "github-releases"
     },
     {
       "customType": "regex",
       "description": "Update copier-flake ref in Nix flake inputs",
       "fileMatch": ["template/flake\\.nix\\.jinja$", "includes/flake-extra-inputs\\.jinja$"],
       "matchStrings": ["github:gordon-code/copier-flake/(?<currentDigest>[a-f0-9]+).*#\\s*(?<currentValue>v[\\S]+)"],
-      "depName": "gordon-code/copier-flake",
-      "datasource": "github-releases"
+      "depNameTemplate": "gordon-code/copier-flake",
+      "datasourceTemplate": "github-releases"
     }
 {% endif %}

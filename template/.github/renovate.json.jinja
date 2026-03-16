@@ -10,7 +10,7 @@
       "customType": "regex",
       "fileMatch": [".github/workflows/.*\\.yaml$"],
       "matchStrings": ["uses:\\s+(?<depName>[\\w-]+/[\\w-]+)@(?<currentDigest>[a-f0-9]+)\\s+#\\s+(?<currentValue>v[\\S]+)"],
-      "datasource": "github-releases"
+      "datasourceTemplate": "github-releases"
     }
 {% include pathjoin("includes", "renovate-template.jinja") ignore missing %}
   ],

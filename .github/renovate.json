@@ -4,7 +4,6 @@
     "config:best-practices",
     ":semanticCommits"
   ],
-  "dependencyDashboard": true,
   "minimumReleaseAge": "14 days",
   "customManagers": [
     {
@@ -25,7 +24,7 @@
       "customType": "regex",
       "description": "Update copier-flake ref in Nix flake inputs",
       "fileMatch": ["template/flake\\.nix\\.jinja$", "includes/flake-extra-inputs\\.jinja$"],
-      "matchStrings": ["github:gordon-code/copier-flake/(?<currentDigest>[a-f0-9]+)"],
+      "matchStrings": ["github:gordon-code/copier-flake/(?<currentDigest>[a-f0-9]+).*#\\s*(?<currentValue>v[\\S]+)"],
       "depNameTemplate": "gordon-code/copier-flake",
       "datasourceTemplate": "github-releases"
     }

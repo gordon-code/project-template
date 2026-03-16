@@ -4,14 +4,13 @@
     "config:best-practices",
     ":semanticCommits"
   ],
-  "dependencyDashboard": true,
   "minimumReleaseAge": "14 days",
   "customManagers": [
     {
       "customType": "regex",
       "fileMatch": [".github/workflows/.*\\.yaml$"],
       "matchStrings": ["uses:\\s+(?<depName>[\\w-]+/[\\w-]+)@(?<currentDigest>[a-f0-9]+)\\s+#\\s+(?<currentValue>v[\\S]+)"],
-      "datasourceTemplate": "github-releases"
+      "datasource": "github-releases"
     }
 {% include pathjoin("includes", "renovate-template.jinja") ignore missing %}
   ],

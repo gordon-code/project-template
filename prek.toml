@@ -129,7 +129,6 @@ priority = 0
 repo = "https://github.com/python-jsonschema/check-jsonschema"
 rev = "0.37.0"
 
-
 [[repos.hooks]]
 id = "check-github-actions"
 name = "Validate GitHub Actions metadata"

@@ -9,7 +9,7 @@
     {
       "customType": "regex",
       "description": "Update copier-flake ref in Nix flake inputs",
-      "managerFilePatterns": ["/template/flake\\.nix\\.jinja$/", "/includes/flake-extra-inputs\\.jinja$/"],
+      "managerFilePatterns": ["/includes/flake-extra-inputs\\.jinja$/"],
       "matchStrings": ["github:gordon-code/copier-flake/(?<currentDigest>[a-f0-9]+).*#\\s*(?<currentValue>v[\\S]+)"],
       "depNameTemplate": "gordon-code/copier-flake",
       "datasourceTemplate": "github-releases"

@@ -47,7 +47,7 @@ def test_flake_outputs(generate_with_nix):
 def test_nix_fmt_clean(generate_with_nix):
     """Generated Nix code passes nixfmt formatting check."""
     result = run_in_project(
-        generate_with_nix, ["nix", "fmt", "--", "--check", "."], check=False
+        generate_with_nix, ["nix", "fmt", "--", "--fail-on-change", "."], check=False
     )
     assert result.returncode == 0, f"nix fmt check failed:\n{result.stderr}"
 

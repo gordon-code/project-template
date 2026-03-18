@@ -15,7 +15,7 @@
 
     formatter = lib.mkOption {
       type = lib.types.package;
-      default = pkgs.nixfmt-rfc-style;
+      default = pkgs.nixfmt-tree;
       description = "Nix formatter package.";
     };
 

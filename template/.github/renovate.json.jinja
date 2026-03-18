@@ -12,7 +12,7 @@
       "managerFilePatterns": ["/.github/workflows/.*\\.yaml$/"],
       "matchStrings": ["uses:\\s+(?<depName>[\\w-]+/[\\w-]+)@(?<currentDigest>[a-f0-9]+)\\s+#\\s+(?<currentValue>v[\\S]+)"],
       "datasourceTemplate": "github-releases"
-    }
+    }{{ ',' if _is_template else '' }}
 {% include pathjoin("includes", "renovate-template.jinja") ignore missing %}
   ],
   "packageRules": [

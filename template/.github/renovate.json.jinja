@@ -7,12 +7,6 @@
   "gitAuthor": "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>",
   "minimumReleaseAge": "14 days",
   "customManagers": [
-    {
-      "customType": "regex",
-      "managerFilePatterns": ["/\\.github/workflows/.*\\.yaml$/"],
-      "matchStrings": ["uses:\\s+(?<depName>[\\w-]+/[\\w-]+)@(?<currentDigest>[a-f0-9]+)\\s+#\\s+(?<currentValue>v[\\S]+)"],
-      "datasourceTemplate": "github-releases"
-    }{{ ',' if _is_template else '' }}
 {% include pathjoin("includes", "renovate-template.jinja") ignore missing %}
   ],
   "packageRules": [
@@ -25,6 +19,13 @@
       "matchUpdateTypes": ["major"],
       "groupName": "major dependencies",
       "groupSlug": "major"
+    }{{ ',' if _is_template else '' }}
+{% if _is_template %}
+    {
+      "matchManagers": ["github-actions"],
+      "matchFileNames": ["template/**"],
+      "enabled": false
     }
+{% endif %}
   ]
 }

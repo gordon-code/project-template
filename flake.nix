@@ -5,7 +5,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
 
-    copier-flake.url = "github:gordon-code/copier-flake/c7a313453cb6255654c8a0eb081555280fd8fda6"; # v2.0.1
+    copier-flake.url = "github:gordon-code/copier-flake/66a3c653cb91e6caaec4605a58a7e3f0e866424d"; # v2.0.1
   };
 
   outputs =

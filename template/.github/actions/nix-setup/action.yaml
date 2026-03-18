@@ -1,6 +1,6 @@
 # Managed by copier — changes may be overwritten by `copier update`
 name: Nix Setup
-description: Install Nix and enable magic-nix-cache
+description: Install Nix with Determinate Systems installer
 
 inputs:
   nix-extra-conf:
@@ -16,7 +16,4 @@ runs:
         extra-conf: |
           eval-cores = 1
           ${{ inputs.nix-extra-conf }}
-        diagnostic-endpoint: ""
-    - uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
-      with:
         diagnostic-endpoint: ""

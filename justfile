@@ -24,6 +24,7 @@ render:
 	git show HEAD:lib/nix/project.nix > lib/nix/project.nix 2>/dev/null || true
 	git show HEAD:justfile > justfile 2>/dev/null || true
 	git show HEAD:.gitignore > .gitignore 2>/dev/null || true
+	git show HEAD:.github/workflows/render-template.yaml > .github/workflows/render-template.yaml 2>/dev/null || true
 
 # Run unit tests
 test:

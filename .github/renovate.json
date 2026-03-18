@@ -32,11 +32,6 @@
       "matchUpdateTypes": ["major"],
       "groupName": "major dependencies",
       "groupSlug": "major"
-    },
-    {
-      "matchManagers": ["github-actions"],
-      "matchFileNames": ["template/**"],
-      "enabled": false
     }
   ]
 }

@@ -19,13 +19,6 @@
       "matchUpdateTypes": ["major"],
       "groupName": "major dependencies",
       "groupSlug": "major"
-    }{{ ',' if _is_template else '' }}
-{% if _is_template %}
-    {
-      "matchManagers": ["github-actions"],
-      "matchFileNames": ["template/**"],
-      "enabled": false
     }
-{% endif %}
   ]
 }

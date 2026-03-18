@@ -287,6 +287,16 @@ def test_renovate_has_template_config(generated_template_project):
     assert template_managers, "No template-specific customManagers found"
 
 
+def test_renovate_template_suppresses_builtin_gha(generated_template_project):
+    """Template repo disables built-in github-actions manager for template paths."""
+    data = parse_json(generated_template_project / ".github" / "renovate.json")
+    rules = data.get("packageRules", [])
+    gha_rule = [r for r in rules if r.get("matchManagers") == ["github-actions"]]
+    assert gha_rule, "No packageRule suppressing github-actions for template paths"
+    assert gha_rule[0].get("matchFileNames") == ["template/**"]
+    assert gha_rule[0].get("enabled") is False
+
+
 def test_no_consistency_job_default(generated_github_project):
     """Default projects have no consistency job in pr-checks."""
     assert "consistency" not in (generated_github_project / ".github" / "workflows" / "pr-checks.yaml").read_text()

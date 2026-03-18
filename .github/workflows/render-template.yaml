@@ -35,6 +35,9 @@ jobs:
       - name: Re-render from template
         run: nix develop -c just render
 
+      - name: Update flake lock if inputs changed
+        run: nix flake lock
+
       - name: Restore copier answers
         run: git restore .copier-answers.yaml
 

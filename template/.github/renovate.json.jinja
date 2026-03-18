@@ -25,17 +25,6 @@
       "matchUpdateTypes": ["major"],
       "groupName": "major dependencies",
       "groupSlug": "major"
-    }{{ ',' if _is_template else '' }}
-{% if _is_template %}
-    {
-      "description": "Re-render template after dependency updates",
-      "matchManagers": ["custom.regex"],
-      "postUpgradeTasks": {
-        "commands": ["nix develop --command just render", "git checkout -- .copier-answers.yaml"],
-        "fileFilters": ["**/*"],
-        "executionMode": "branch"
-      }
     }
-{% endif %}
   ]
 }

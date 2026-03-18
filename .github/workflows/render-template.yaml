@@ -1,0 +1,40 @@
+# Template-repo only: re-renders root files after Renovate updates includes/template
+name: Render Template
+
+on:
+  push:
+    branches: ['renovate/**']
+    paths: ['includes/**', 'template/**']
+
+permissions:
+  contents: write
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          ref: ${{ github.ref }}
+
+      - uses: ./.github/actions/nix-setup
+
+      - name: Set up Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Re-render from template
+        run: nix develop -c just render
+
+      - name: Restore copier answers
+        run: git restore .copier-answers.yaml
+
+      - name: Commit and push if changed
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "chore: re-renders root files from updated template"
+            git push
+          fi

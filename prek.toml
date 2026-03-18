@@ -145,6 +145,7 @@ rev = "43.76.4"
 
 [[repos.hooks]]
 id = "renovate-config-validator"
+name = "Validate Renovate config (strict)"
 args = ["--strict"]
 priority = 0
 

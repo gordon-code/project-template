@@ -15,7 +15,7 @@ render:
 		! -name '.serena' \
 		! -name 'template' ! -name 'includes' ! -name 'copier.yaml' \
 		! -name 'hack' ! -name 'tests' ! -name 'pytest.ini' \
-		! -name 'flake.lock' \
+		! -name 'flake.lock' ! -name 'CHANGELOG.md' \
 		-exec rm -rf {} +
 	# Regenerate from template
 	copier copy --vcs-ref=HEAD --trust --defaults \

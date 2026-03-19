@@ -9,6 +9,8 @@ branch_whitelist = ["{{ "." | gitdefaultbranch }}"]
 # `{{version}}` will be interpreted as your target version
 # `{{version_tag}}` includes the version and the `tag_prefix`
 post_bump_hooks = [
+    # Ensure CHANGELOG.md has a trailing newline
+    "sh -c 'f=CHANGELOG.md; test \"$(tail -c1 $f)\" && echo >> $f; git add $f && git commit --amend --no-edit'",
     # Re-tag release commit to ensure a signed tag
     {% raw %}"git tag {{version_tag}} {{version_tag}}^{} --force --sign --message='Release {{version}}'"{% endraw %}
 ]

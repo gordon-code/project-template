@@ -249,17 +249,11 @@ def test_pr_checks_pinned_actions(generated_github_project):
 
 
 def test_renovate_config_valid_json(generated_github_project):
-    """renovate.json is valid JSON with expected keys."""
+    """renovate.json is valid JSON with $schema (khepri-managed, minimal config)."""
     data = parse_json(generated_github_project / ".github" / "renovate.json")
-    assert "extends" in data
-    assert "customManagers" in data
-
-
-def test_renovate_no_template_config(generated_github_project):
-    """Default projects don't have template-specific Renovate managers."""
-    content = (generated_github_project / ".github" / "renovate.json").read_text()
-    assert "postUpgradeTasks" not in content
-    assert "template/" not in content
+    assert "$schema" in data
+    assert "extends" not in data
+    assert "customManagers" not in data
 
 
 def test_security_md(generated_github_project):

@@ -1,24 +1,7 @@
 {
-  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:best-practices",
-    ":semanticCommits"
-  ],
-  "gitAuthor": "github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>",
-  "minimumReleaseAge": "14 days",
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json"{% if _is_template %},
   "customManagers": [
 {% include pathjoin("includes", "renovate-template.jinja") ignore missing %}
-  ],
-  "packageRules": [
-    {
-      "matchUpdateTypes": ["minor", "patch", "digest"],
-      "groupName": "non-major dependencies",
-      "groupSlug": "non-major"
-    },
-    {
-      "matchUpdateTypes": ["major"],
-      "groupName": "major dependencies",
-      "groupSlug": "major"
-    }
   ]
+{% endif %}
 }

@@ -52,7 +52,6 @@ pass "Core files present"
 
 if [ "$HOSTING_PLATFORM" = "github" ]; then
   for f in .github/workflows/pr-checks.yaml \
-    .github/workflows/renovate.yaml \
     .github/renovate.json \
     .github/actions/nix-setup/action.yaml \
     .github/SECURITY.md; do

@@ -16,35 +16,50 @@ permissions:
 jobs:
   render:
     runs-on: ubuntu-latest
+    # Soft-fail: an unconfigured or stale RENOVATE_TOKEN (e.g. on a fork, or if the
+    # token expires) shouldn't red-X every Renovate PR touching includes/**|template/**.
+    continue-on-error: true
     permissions:
       contents: write
     timeout-minutes: 15
+    env:
+      # secrets can't be referenced directly in `if:` conditions; mirror into env first.
+      RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Checkout
+        id: checkout
+        if: ${{ env.RENOVATE_TOKEN != '' }}
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ github.ref }}
           token: ${{ secrets.RENOVATE_TOKEN }}
 
       - uses: ./.github/actions/nix-setup
+        if: ${{ steps.checkout.outcome == 'success' }}
 
       - name: Set up Git
+        if: ${{ steps.checkout.outcome == 'success' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Re-render from template
+        if: ${{ steps.checkout.outcome == 'success' }}
         run: nix develop -c just render
 
       - name: Update flake lock if inputs changed
+        if: ${{ steps.checkout.outcome == 'success' }}
         run: |
           if ! git diff --quiet flake.nix; then
             nix flake lock
           fi
 
       - name: Restore copier answers
+        if: ${{ steps.checkout.outcome == 'success' }}
         run: git restore .copier-answers.yaml
 
       - name: Commit and push if changed
+        if: ${{ steps.checkout.outcome == 'success' }}
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             git add -A

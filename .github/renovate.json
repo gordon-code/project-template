@@ -14,6 +14,13 @@
       "managerFilePatterns": ["/template/flake\\.nix\\.jinja$/", "/includes/flake-extra-inputs\\.jinja$/"],
       "matchStrings": ["github:(?<depName>[\\w-]+/[\\w-]+)/(?<currentDigest>[a-f0-9]+).*#\\s*(?<currentValue>v[\\S]+)"],
       "datasourceTemplate": "github-releases"
+    },
+    {
+      "customType": "regex",
+      "description": "Update Git hook dependency pins in prek.toml.jinja (mirrors the native prek.toml manager, which can't parse this Jinja-templated file)",
+      "managerFilePatterns": ["/template/prek\\.toml\\.jinja$/"],
+      "matchStrings": ["repo = \"https://github\\.com/(?<depName>[\\w.-]+/[\\w.-]+)\"\\nrev = \"(?<currentValue>[^\"]+)\""],
+      "datasourceTemplate": "github-tags"
     }
   ]
 }

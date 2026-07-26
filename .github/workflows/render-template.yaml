@@ -16,9 +16,6 @@ permissions:
 jobs:
   render:
     runs-on: ubuntu-latest
-    # Soft-fail: an unconfigured or stale RENOVATE_TOKEN (e.g. on a fork, or if the
-    # token expires) shouldn't red-X every Renovate PR touching includes/**|template/**.
-    continue-on-error: true
     permissions:
       contents: write
     timeout-minutes: 15
@@ -26,9 +23,14 @@ jobs:
       # secrets can't be referenced directly in `if:` conditions; mirror into env first.
       RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
     steps:
+      # Skipped entirely when unconfigured (e.g. a fork with no RENOVATE_TOKEN secret).
+      # continue-on-error scoped to just this step: an invalid/expired token should
+      # soft-fail here rather than red-X the whole job, but any REAL failure in the
+      # steps below (a broken render, a bad push, etc.) must still fail loudly.
       - name: Checkout
         id: checkout
         if: ${{ env.RENOVATE_TOKEN != '' }}
+        continue-on-error: true
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ github.ref }}

@@ -23,47 +23,46 @@ jobs:
       # secrets can't be referenced directly in `if:` conditions; mirror into env first.
       RENOVATE_TOKEN: ${{ secrets.RENOVATE_TOKEN }}
     steps:
-      # Skipped entirely when unconfigured (e.g. a fork with no RENOVATE_TOKEN secret).
-      # continue-on-error scoped to just this step: an invalid/expired token should
-      # soft-fail here rather than red-X the whole job, but any REAL failure in the
-      # steps below (a broken render, a bad push, etc.) must still fail loudly.
+      # Default GITHUB_TOKEN is fine here: this is a public repo and checkout only
+      # needs read access. No token gating needed on this step (or anything below,
+      # up to the push) -- they should always run so template bugs still get caught
+      # even when RENOVATE_TOKEN is unset or stale.
       - name: Checkout
-        id: checkout
-        if: ${{ env.RENOVATE_TOKEN != '' }}
-        continue-on-error: true
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ github.ref }}
-          token: ${{ secrets.RENOVATE_TOKEN }}
 
       - uses: ./.github/actions/nix-setup
-        if: ${{ steps.checkout.outcome == 'success' }}
 
       - name: Set up Git
-        if: ${{ steps.checkout.outcome == 'success' }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: Re-render from template
-        if: ${{ steps.checkout.outcome == 'success' }}
         run: nix develop -c just render
 
       - name: Update flake lock if inputs changed
-        if: ${{ steps.checkout.outcome == 'success' }}
         run: |
           if ! git diff --quiet flake.nix; then
             nix flake lock
           fi
 
       - name: Restore copier answers
-        if: ${{ steps.checkout.outcome == 'success' }}
         run: git restore .copier-answers.yaml
 
+      # The only step that actually needs a non-default token: GITHUB_TOKEN-authored
+      # pushes don't trigger downstream workflow runs (pr-checks.yaml wouldn't re-run
+      # on the pushed commit), and pushing a change to a workflow file needs
+      # `workflows: write`, which GITHUB_TOKEN doesn't have here. Skipped entirely
+      # when unconfigured (e.g. a fork); soft-fails (rather than red-X'ing the PR)
+      # when the token is set but invalid/expired.
       - name: Commit and push if changed
-        if: ${{ steps.checkout.outcome == 'success' }}
+        if: ${{ env.RENOVATE_TOKEN != '' }}
+        continue-on-error: true
         run: |
           if [ -n "$(git status --porcelain)" ]; then
+            git remote set-url origin "https://x-access-token:${RENOVATE_TOKEN}@github.com/${{ github.repository }}.git"
             git add -A
             git commit -m "chore: re-render root files from updated template"
             git push

@@ -20,10 +20,14 @@ jobs:
       contents: write
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      # Default GITHUB_TOKEN is fine here: this is a public repo and checkout only
+      # needs read access. No token gating needed on this step (or anything below,
+      # up to the push) -- they should always run so template bugs still get caught
+      # even when the bot token below is unset or invalid.
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           ref: ${{ github.ref }}
-          token: ${{ secrets.RENOVATE_TOKEN }}
 
       - uses: ./.github/actions/nix-setup
 
@@ -44,9 +48,32 @@ jobs:
       - name: Restore copier answers
         run: git restore .copier-answers.yaml
 
+      # Mints a short-lived khepri-bot installation token instead of a static PAT --
+      # no manual rotation, no silent expiry. `vars` (unlike `secrets`) can be used
+      # directly in `if:`, so this cleanly no-ops on forks without KHEPRI_BOT_CLIENT_ID
+      # configured. continue-on-error: an invalid/revoked key soft-fails here rather
+      # than red-X'ing the whole job.
+      - name: Generate bot token
+        id: bot-token
+        if: ${{ vars.KHEPRI_BOT_CLIENT_ID != '' }}
+        continue-on-error: true
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.KHEPRI_BOT_CLIENT_ID }}
+          private-key: ${{ secrets.KHEPRI_BOT_PRIVATE_KEY }}
+
+      # The only step that actually needs a non-default token: GITHUB_TOKEN-authored
+      # pushes don't trigger downstream workflow runs (pr-checks.yaml wouldn't re-run
+      # on the pushed commit), and pushing a change to a workflow file needs
+      # `workflows: write`, which GITHUB_TOKEN doesn't have here.
       - name: Commit and push if changed
+        if: ${{ steps.bot-token.outcome == 'success' }}
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ steps.bot-token.outputs.token }}
         run: |
           if [ -n "$(git status --porcelain)" ]; then
+            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
             git add -A
             git commit -m "chore: re-render root files from updated template"
             git push

@@ -25,6 +25,9 @@ render:
 	git show HEAD:justfile > justfile 2>/dev/null || true
 	git show HEAD:.gitignore > .gitignore 2>/dev/null || true
 	git show HEAD:.github/workflows/render-template.yaml > .github/workflows/render-template.yaml 2>/dev/null || true
+	mkdir -p .github/scripts
+	git show HEAD:.github/scripts/renovate-render.sh > .github/scripts/renovate-render.sh 2>/dev/null || true
+	chmod +x .github/scripts/renovate-render.sh 2>/dev/null || true
 
 # Run unit tests
 test:

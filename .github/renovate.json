@@ -6,16 +6,14 @@
       "description": "Update SHA-pinned actions in .jinja template files",
       "managerFilePatterns": ["/template/.*\\.ya?ml\\.jinja$/", "/includes/.*\\.jinja$/"],
       "matchStrings": ["uses:\\s+(?<depName>[\\w-]+/[\\w-]+)@(?<currentDigest>[a-f0-9]+)\\s+#\\s+(?<currentValue>v[\\S]+)"],
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^(?<version>v\\d+)"
+      "datasourceTemplate": "github-tags"
     },
     {
       "customType": "regex",
       "description": "Update SHA-pinned Nix flake inputs in template files",
       "managerFilePatterns": ["/template/flake\\.nix\\.jinja$/", "/includes/flake-extra-inputs\\.jinja$/"],
       "matchStrings": ["github:(?<depName>[\\w-]+/[\\w-]+)/(?<currentDigest>[a-f0-9]+).*#\\s*(?<currentValue>v[\\S]+)"],
-      "datasourceTemplate": "github-releases",
-      "extractVersionTemplate": "^(?<version>v\\d+)"
+      "datasourceTemplate": "github-tags"
     },
     {
       "customType": "regex",

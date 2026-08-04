@@ -1,9 +1,5 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json"{% if _is_template %},
-  "postUpgradeTasks": {
-    "commands": ["bash .github/scripts/renovate-render.sh"],
-    "executionMode": "branch"
-  },
   "customManagers": [
 {% include pathjoin("includes", "renovate-template.jinja") ignore missing %}
   ]
